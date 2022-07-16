@@ -1,0 +1,21 @@
+---
+title: "Brazil - Europe"
+output: flexdashboard::flex_dashboard
+---
+
+# Overview
+
+This is a placeholder for the dashboard accompanying the bi-regional Operational ANS Comparison between Brazil and Europe.
+
+### Section 1
+
+### Section 2
+
+Some placeholder text. 
+
+
+# Traffic Characterisation
+
+# Placeholder
+
+# About

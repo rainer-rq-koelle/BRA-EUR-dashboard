@@ -2,31 +2,51 @@
 title: "Brazil-Europe ANS Comparison"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
     vertical_layout: fill
 ---
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
+library(tidyverse)
 library(echarts4r)
+
+max_date <- lubridate::ymd_hms("2023-07-01 00:00:00")
 ```
 
-Column {data-width=650}
+Column {data-height=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Overall Network Traffic
 
 ```{r}
+tfc_all <- read_csv("./data/network-tfc-all.csv", show_col_types = FALSE) 
 
+tfc_all |>
+  group_by(REGION) |> 
+  e_charts(x = DATE) |> # initialise and set x
+  e_line(serie = NORM_FLTS) |> 
+  e_tooltip(trigger = "axis")
 ```
 
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Normalised Regional Traffic
 
 ```{r}
-
+# normalised
+norm_factor = 0.9
+tfc_norm <- tfc_all |> filter(year(DATE) == 2019) |> 
+  group_by(REGION) |> 
+  summarise(NORM = quantile(NORM_FLTS, p = norm_factor, na.rm = TRUE))
+  
+tfc_all |> left_join(tfc_norm, by = join_by("REGION")) |> 
+  mutate(NORM_FLTS = NORM_FLTS / NORM) |> 
+  group_by(REGION) |> 
+  e_charts(x = DATE) |> # initialise and set x
+  e_line(serie = NORM_FLTS) |> 
+  e_tooltip(trigger = "axis")
 ```
 
 ### Chart C

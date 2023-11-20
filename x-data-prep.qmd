@@ -1,0 +1,51 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+
+max_date <- lubridate::ymd_hms("2023-07-01 00:00:00")
+```
+
+
+## Network Traffic
+
+```{}
+# data prep
+# get data from study
+pth_up    <- here::here() |> dirname()
+pth_study <- "BRA-EUR-2023"
+bra_data  <- "hugo-data-to-check/tfc_movts_all_no_hel.csv"
+fn_bra    <- here::here(pth_up, pth_study, bra_data)
+
+tfc_bra <- 
+  read_csv(fn_bra, show_col_types = FALSE) |> 
+  mutate(DATE = lubridate::as_datetime(DATE)) |> 
+  filter(DATE < max_date) |> mutate(REGION = "BRA")
+
+eur_data  <- "data-pbwg/PBWG-EUR-region-traffic.csv"
+eur_data2 <- "data-pbwg/PBWG-EUR-region-traffic-2023.csv"
+fn_eur    <- here::here(pth_up, pth_study, eur_data)
+fn_eur2   <- here::here(pth_up, pth_study, eur_data2)
+
+tfc_eur  <- read_csv(fn_eur, show_col_types = FALSE) |> 
+  filter(between(lubridate::year(DATE), 2019, 2022))
+tfc_eur2 <- read_csv(fn_eur2, show_col_types = FALSE) |> 
+  filter(lubridate::year(DATE) == 2023, DATE < max_date)
+
+tfc_eur <- bind_rows(tfc_eur, tfc_eur2) |> mutate(REGION = "EUR")
+
+tfc_eur <- tfc_eur |> 
+  mutate( DLY_FLTS = ARRS - ARRS_DOM + DEPS + OVR_FLTS
+         ,MVTS_NORM_ROLLAVG = zoo::rollmean(DLY_FLTS, k = 7, fill = NA))
+
+tfc_all <- bind_rows(
+   tfc_bra |> select(REGION, DATE, FLTS = DLY_FLTS, NORM_FLTS = MVTS_NORM_ROLLAVG)
+  ,tfc_eur |> select(REGION, DATE, FLTS = DLY_FLTS, NORM_FLTS = MVTS_NORM_ROLLAVG)
+)
+
+tfc_all |> write_csv(file = "./data/network-tfc-all.csv")
+```
+
